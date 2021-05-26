@@ -190,7 +190,7 @@ cheugy_tweets <- rtweet::search_tweets(
 
 ```{r echo = F}
 # do this because markdown is not interactive
-jgtwitterapp_keylist <- readRDS(here("jgtwitterapp_keylist.rds"))
+jgtwitterapp_keylist <- readRDS(here("keys", "jgtwitterapp_keys.rds"))
 
 my_token <- create_token(
   app = "jgtwitterapp", # the name of my app
@@ -277,6 +277,7 @@ Or we could stream all tweets mentioning *cheugy* or *cheug* for a week.
 
 ```{r eval = F}
 # stream tweets for a week (60 secs * 60 mins * 24 hours *  7 days)
+# I didn't run this
 stream_tweets(
   q = "cheugy OR cheug lang:en", 
   timeout = 60 * 60 * 24 * 7,
@@ -285,14 +286,14 @@ stream_tweets(
   )
 ```
 
-A couple things to note here. I've set this to save the **unparsed** output to the file "live_cheugy_tweets.json" in my project's "data_raw" folder. This is a better method for longer streams. As noted in the `?stream_tweets` documentation, 
+A couple things to note here. I've set this to save the **unparsed** output to the file `live_cheugy_tweets.json` in my project's `data_raw` folder. This is a better method for longer streams. As noted in the `?stream_tweets` documentation, 
 
 > By default, `parse = TRUE`, this function does the parsing for you. However, **for larger streams, or for automated scripts designed to continuously collect data, this should be set to `FALSE` as the parsing process can eat up processing resources and time.** For other uses, setting parse to `TRUE` saves you from having to sort and parse the messy list structure returned by Twitter.
 
 We can easily load and parse this to a tidy dataframe with `parse_stream()` like so.
 
 ```{r}
-cheugy_tweets2 <- parse_stream(here("data_raw", "live_cheugy_tweets.json"))
+cheugy_tweets <- parse_stream(here("data_raw", "live_cheugy_tweets.json"))
 ```
 
 
@@ -392,13 +393,13 @@ jgtwitterapp_keylist <- list(
   bearer_token = "xxxxxxxxxxx"
 )
 # save to file
-saveRDS(jgtwitterapp_keylist, here("jgtwitterapp_keylist.rds"))
+saveRDS(jgtwitterapp_keylist, here("keys", "jgtwitterapp_keys.rds"))
 ```
 
 So when I want to use this with `{rtweet}`, I can just load it and create a token with `create_token`.
 
 ```{r eval=F}
-jgtwitterapp_keylist <- readRDS(here("jgtwitterapp_keylist.rds"))
+jgtwitterapp_keylist <- readRDS(here("keys", "jgtwitterapp_keys.rds"))
 
 my_token <- create_token(
   app = "jgtwitterapp", # the name of my app
@@ -577,7 +578,7 @@ Alternatively, you can save your key and then load it when you need it. Your key
 
 ```{r}
 # read in my saved key and paste it to the path
-gd_api <- readRDS(here::here("guardian_api.rds"))
+gd_api <- readRDS(here::here("keys", "guardian_keys.rds"))
 gd_path <- paste0("https://content.guardianapis.com/search?api-key=",
                   gd_api$api_key)
 # Loaded
@@ -617,7 +618,7 @@ Again, you'll need to register a developer account ([**https://developer.oxfordd
 ![**Information about how to create your GET request from the OED API**](`r here("figures", "oed_help.png")`)
 
 ```{r}
-oed_keys <- readRDS(here::here("oed_keys.rds"))
+oed_keys <- readRDS(here::here("keys", "oed_keys.rds"))
 
 # note that the path contains the word you are searching for
 word <- "dinosaur"
@@ -639,7 +640,7 @@ It works! Now we could create our own wrapper function that gets the request and
 # function for getting entries from the OED API
 get_OED_entry <- function(word, lang = "en-gb"){
   # Load the keys if not already in the workspace
-  if(!"oed_keys" %in% ls()) readRDS(here::here("oed_keys.rds"))
+  if(!"oed_keys" %in% ls()) readRDS(here::here("keys", "oed_keys.rds"))
   
   path <- paste(
     "https://od-api.oxforddictionaries.com/api/v2/entries",
