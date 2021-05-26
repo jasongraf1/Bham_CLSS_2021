@@ -1,6 +1,6 @@
 ---
 title: "Web scraping with R"
-subtitle: "Part 3: Using APIs"
+subtitle: "Part 2: Wroking with APIs"
 author: "Jason Grafmiller"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output: 
@@ -31,7 +31,7 @@ opts_knit$set(width=75)
 
 <!-- This is part 3 ([**part 1**](https://jasongraf1.github.io/tutorials/webscraping_with_R_part1) and [**part 2**](https://jasongraf1.github.io/tutorials/webscraping_with_R_part2)) of a series of tutorials on web scraping in R. If you are new to web scraping, please see the first two parts before continuing.  -->
 
-In this tutorial, we'll see how to use R to get information from the Web using a public API. 
+In this tutorial, we'll see how to use R to get information from the Web using a public API. This markdown document was built using the `{rmdformats}` package. You can download the `.Rmd` file [**here**](https://github.com/jasongraf1/Bham_CLSS_2021/blob/main/markdown/webscraping_with_R_tutorial_part2.Rmd).
 
 # What is an API?
 
@@ -46,6 +46,7 @@ Once this computer receives a data request, it will do its own processing of the
 Why is this valuable? Contrast the API approach to "pure" webscraping that we used in the previous tutorial. When a programmer scrapes a web page, they receive the data in a messy chunk of HTML. While we were able to use libraries, e.g. `{rvest}`, to make parsing HTML text easier, we still had to go through multiple steps to identify the page URLs, and the correct bits of HTML and CSS to give us what we wanted. This wasn't too hard with our toy examples, but it can often be quite complicated.  
 
 APIs offer a way to get data that we can immediately use, which can save us a lot of time and frustration. Many commonly used sites have R packages that are specifically dedicated to interfacing with those sites' APIs. `{rtweet}` is such a library for getting tweets from Twitter's API. Other examples include `{RedditExtractoR}`, `{twitteR}`, `{Rfacebook}`, `{geniusr}`, and `{spotifyr}`. Otherwise, you can use the `{httr}` and `{jsonlite}` packages to work with APIs more generally. These are a bit more advanced, and we will only briefly go into these at the end of this session (but see [**here**](https://www.dataquest.io/blog/r-api-tutorial/) and [**here**](https://medium.com/@traffordDataLab/querying-apis-in-r-39029b73d5f1) for an introduction). 
+
 
 
 # Getting started

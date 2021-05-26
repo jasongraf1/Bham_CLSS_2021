@@ -1,6 +1,6 @@
 ---
 title: "Web scraping with R"
-subtitle: "The basics"
+subtitle: "Part 1: The basics of `{rvest}`"
 author: "Jason Grafmiller"
 date: "5-8 July, 2021"
 output: 
@@ -33,7 +33,7 @@ Web scraping is a technique for automatically collecting data from the web. On a
 
 In this tutorial we'll go over the basics of how to use R to quickly scrape data from the web, and how to put that data into a structured format which can be used for whatever analysis you might like. 
 
-This markdown document was built using the `{rmdformats}` package. You can download the `.Rmd` file [**here**](). 
+This markdown document was built using the `{rmdformats}` package. You can download the `.Rmd` file [**here**](https://github.com/jasongraf1/Bham_CLSS_2021/blob/main/markdown/webscraping_with_R_tutorial_part1.Rmd). 
 
 # Preliminaries
 
