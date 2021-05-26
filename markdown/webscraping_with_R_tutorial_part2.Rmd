@@ -33,19 +33,7 @@ opts_knit$set(width=75)
 
 In this tutorial, we'll see how to use R to get information from the Web using a public API. 
 
-# Preliminaries
-
-## About R 
-
-Since we're working in R, some familiarity with R and RStudio is a necessity. This tutorial assumes you are familiar with a few of the core aspects of the "tidy" coding style, particularly the use of pipes, i.e. `%>%`. If you are new to R, I recommend the following to get started:
-
-- [**swiRl**](https://swirlstats.com/). This is a tutorial library that works directly in R. There really isn't a better way to learn R!
-- [***R for Data Science***](https://r4ds.had.co.nz/) by Hadley Wickham and Garrett Grolemund [@wickham_data_2016]. This covers all the basics for working with R using the **"tidy"** approach to programming.
-- [***Text mining with R: a tidy approach***](https://www.tidytextmining.com/) by Julia Silge and David Robinson [@silge_text_2017a]. This a great introduction to the `{tidytext}` package, which is a powerful tool for doing all kinds of things with text data, including tokenization, sentiment analysis and topic modelling.
-
-I also highly recommend familiarising yourself with how to use [**RStudio projects**](https://support.rstudio.com/hc/en-us/articles/200526207-Using-Projects), and particularly the [`{here}` **package**](https://malco.io/2018/11/05/why-should-i-use-the-here-package-when-i-m-already-using-projects/) for managing file paths. These will make your life much easier as you use R for more and more projects. You can see my example project directory [**on my GitHub repository**]() (with some things omitted for privacy, e.g. my `.Renviron` file). 
-
-## What is an API?
+# What is an API?
 
 In the previous tutorial, we saw how to scrape data in a way that essentially mimicked what a human user would do: we went to a URL, identified the information we wanted by parsing the HTML codes and using CSS selectors, then we "copied" that information into a dataframe in R or into separate text files. This method is a common approach to scraping, but it is not the only, or even the most efficient, method. APIs are another very common way to access and acquire data from the Web.
 
@@ -69,7 +57,6 @@ Libraries we'll be using:
 ```{r libs}
 library(tidyverse) # for data wrangling
 library(tictoc) # for timing processes
-library(tidytext) # for text mining
 library(here) # for creating consistent file paths
 library(usethis) # for editing environment files
 ```
@@ -313,6 +300,7 @@ rblog_friends %>%
   pull(user_id) %>% # pull out the column as a vector
   lookup_users()
 ```
+
 The same applies to the `get_followers()` function, which gets the accounts following a user.
 
 ```{r}
