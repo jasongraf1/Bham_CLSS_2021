@@ -1,0 +1,25 @@
+/*
+blockquote {
+  color: #e5e5e5;
+} */
+
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Open Sans'), local('OpenSans'), url('fonts/open-sans-400.woff') format('woff');
+}
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 700;
+  src: local('Open Sans Bold'), local('OpenSans-Bold'), url('fonts/open-sans-700.woff') format('woff');
+}
+
+body {
+  font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+h1, h2, h3 {
+  font-family: "Raleway", "Helvetica Neue", Helvetica, Arial, sans-serif;
+}

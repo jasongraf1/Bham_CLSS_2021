@@ -1,0 +1,739 @@
+---
+title: "Web scraping with R"
+subtitle: "Part 3: Using APIs"
+author: "Jason Grafmiller"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: 
+  rmdformats::downcute:
+    df_print: paged
+    css: custom_css.css
+csl: unified-style-linguistics.csl
+bibliography: r_bibliography.bib
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+# set some options to reduce noise
+opts_chunk$set(
+  echo = TRUE,
+  cache = FALSE,
+  prompt = FALSE,
+  tidy = FALSE,
+	comment = NA,
+	message = FALSE,
+	error = FALSE, 
+	eval = TRUE,
+	digits = 2)
+opts_knit$set(width=75)
+```
+
+------------------------------------------------------------------------
+
+<!-- This is part 3 ([**part 1**](https://jasongraf1.github.io/tutorials/webscraping_with_R_part1) and [**part 2**](https://jasongraf1.github.io/tutorials/webscraping_with_R_part2)) of a series of tutorials on web scraping in R. If you are new to web scraping, please see the first two parts before continuing.  -->
+
+In this tutorial, we'll see how to use R to get information from the Web using a public API. 
+
+# Preliminaries
+
+## About R 
+
+Since we're working in R, some familiarity with R and RStudio is a necessity. This tutorial assumes you are familiar with a few of the core aspects of the "tidy" coding style, particularly the use of pipes, i.e. `%>%`. If you are new to R, I recommend the following to get started:
+
+- [**swiRl**](https://swirlstats.com/). This is a tutorial library that works directly in R. There really isn't a better way to learn R!
+- [***R for Data Science***](https://r4ds.had.co.nz/) by Hadley Wickham and Garrett Grolemund [@wickham_data_2016]. This covers all the basics for working with R using the **"tidy"** approach to programming.
+- [***Text mining with R: a tidy approach***](https://www.tidytextmining.com/) by Julia Silge and David Robinson [@silge_text_2017a]. This a great introduction to the `{tidytext}` package, which is a powerful tool for doing all kinds of things with text data, including tokenization, sentiment analysis and topic modelling.
+
+I also highly recommend familiarising yourself with how to use [**RStudio projects**](https://support.rstudio.com/hc/en-us/articles/200526207-Using-Projects), and particularly the [`{here}` **package**](https://malco.io/2018/11/05/why-should-i-use-the-here-package-when-i-m-already-using-projects/) for managing file paths. These will make your life much easier as you use R for more and more projects. You can see my example project directory [**on my GitHub repository**]() (with some things omitted for privacy, e.g. my `.Renviron` file). 
+
+## What is an API?
+
+In the previous tutorial, we saw how to scrape data in a way that essentially mimicked what a human user would do: we went to a URL, identified the information we wanted by parsing the HTML codes and using CSS selectors, then we "copied" that information into a dataframe in R or into separate text files. This method is a common approach to scraping, but it is not the only, or even the most efficient, method. APIs are another very common way to access and acquire data from the Web.
+
+Instead of downloading a dataset or scraping a site, APIs allow you to request data directly from a website through what's called an **Application Programming Interface**. Many large sites like Reddit, Twitter, Spotify, and Facebook provide APIs so that data analysts and scientists can access data quickly, reliably, and legally. This last bit is important. **Always check if a website has an API before scraping by other means.** The following brief explanation is adapted from [**this post at dataquest.io**](https://www.dataquest.io/blog/r-api-tutorial/).
+
+'API' is a general term for the place where one computer program interacts with another, or with itself. We will be working with web APIs here, where two different computers---a client and server---interact with each other to request and provide data, respectively. APIs provide a way for us to request clean and curated data from a website. When a website sets up an API, they are essentially setting up a computer that waits for data requests from other users.
+
+Once this computer receives a data request, it will do its own processing of the data and send it to the computer that requested it. From our perspective as the requester, we will need to write code in R that creates the request and tells the computer running the API what we want. That computer will then read our code, process the request, and return nicely-formatted data that we can work with in existing R libraries.
+
+Why is this valuable? Contrast the API approach to "pure" webscraping that we used in the previous tutorial. When a programmer scrapes a web page, they receive the data in a messy chunk of HTML. While we were able to use libraries, e.g. `{rvest}`, to make parsing HTML text easier, we still had to go through multiple steps to identify the page URLs, and the correct bits of HTML and CSS to give us what we wanted. This wasn't too hard with our toy examples, but it can often be quite complicated.  
+
+APIs offer a way to get data that we can immediately use, which can save us a lot of time and frustration. Many commonly used sites have R packages that are specifically dedicated to interfacing with those sites' APIs. `{rtweet}` is such a library for getting tweets from Twitter's API. Other examples include `{RedditExtractoR}`, `{twitteR}`, `{Rfacebook}`, `{geniusr}`, and `{spotifyr}`. Otherwise, you can use the `{httr}` and `{jsonlite}` packages to work with APIs more generally. These are a bit more advanced, and we will only briefly go into these at the end of this session (but see [**here**](https://www.dataquest.io/blog/r-api-tutorial/) and [**here**](https://medium.com/@traffordDataLab/querying-apis-in-r-39029b73d5f1) for an introduction). 
+
+
+# Getting started
+
+## R libraries
+
+Libraries we'll be using:
+
+```{r libs}
+library(tidyverse) # for data wrangling
+library(tictoc) # for timing processes
+library(tidytext) # for text mining
+library(here) # for creating consistent file paths
+library(usethis) # for editing environment files
+```
+
+We'll also be making extensive use of the `{tidytext}` package, which you can find more info about in the [***Text Mining with R***](https://www.tidytextmining.com/index.html) book online.
+
+In the following section we'll take a quick look at a few different packages for interfacing with specific APIs. These packages are 
+
+```{r api_libs}
+# R libraries for interfacing with APIs
+library(RedditExtractoR) # for scraping reddit forums
+library(rtweet) # for getting tweets 
+
+library(httr) # for interfacing with APIs in general
+library(jsonlite) # for parsing JSON
+```
+
+# Working with API wrapper packages
+
+## Reddit
+
+We'll start with reddit. There's a lot you could do with reddit data, and fortunately the `{RedditExtractoR}` package makes it very easy to get data. Using it is very simple with the `get_reddit()` function. 
+
+For example, suppose we want to see what people are saying about Spinosaurus, a genus of dinosaur that turns out to have been [**even cooler and more unusual**](https://www.heritagedaily.com/2021/01/study-sheds-new-light-on-the-behaviour-of-the-giant-carnivorous-dinosaur-spinosaurus/136945) than we thought.
+
+![**Spinosaurus aegyptiacus. Image source:** https://www.nhm.ac.uk/discover/news/2020/may/dinosaur-diaries-spinosaurus-sauropod-necks-starry-lizard.html](`r here("figures", "spinosaurus.jpg")`)
+
+The `get_reddit()` function returns a dataframe of comment threads and other information about a given search term. We'll use the simple search term "spinosaurus", and limit the results to the subreddit "Dinosaurs". This will give us all the comment threads matching these criteria. 
+
+```{r reddit-scrape}
+tic()
+spinosaur_threads <- get_reddit(
+  search_terms = "Spinosaur",
+  page_threshold = 1, # number of pages to be searched 
+  subreddit = "Dinosaurs"
+)
+toc()
+```
+
+Notice that this function can take a while to run, and it conveniently prints a progress bar to help.  
+
+Let's see what we have in there.
+
+```{r}
+spinosaur_threads %>% 
+  glimpse()
+```
+
+If we arrange the comments by thread title, we can look at the comments and authors. (as usual, scroll through columns with the little arrow in the upper right)
+
+```{r}
+spinosaur_threads %>% 
+  arrange(title) %>% 
+  select(num_comments, title, author, comment) %>% 
+  arrange(desc(num_comments)) # put most popular thread first
+```
+
+
+This is cool. It's clear that these might need some cleaning up, but the data is all there. Super simple!
+
+There are a couple more things to mention about this package. The first is that we can easily graph the comment chains contained in a given thread. This tells us which comments are replied to, and how is replying to them. For example we have the thread titled "[Question] Questions about the Spinosaurs." authored by user *A_Charmandur*, which has 17 total comments.
+
+```{r}
+spinosaur_threads %>% 
+  dplyr::filter(title == "[Question] Questions about the Spinosaurs.") %>% 
+  select(title, num_comments, user, author)
+```
+
+We can graph the comment chains with `construct_graph()` like so.
+
+```{r}
+thread_chain <- spinosaur_threads %>% 
+  dplyr::filter(title == "[Question] Questions about the Spinosaurs.") %>% 
+  construct_graph(plot = TRUE)
+```
+
+Alternatively, we can graph how the users interacted with one another in a given thread, aggregating over their comments (thicker lines indicate more frequent interactions). Here we use the `user_network()` function.
+
+```{r}
+thread_network <- spinosaur_threads %>% 
+  dplyr::filter(title == "[Question] Questions about the Spinosaurs.") %>% 
+  user_network(include_author = TRUE, agg = TRUE)
+
+thread_network$plot
+```
+
+How you might use this information is open ended, but this seems like a very useful too for studying language in use. 
+
+## Twitter
+
+Now let's look at Twitter. I like the `{rtweet}` package for getting tweets very easily. But in order to use it, you need a Twitter account so you can authorize `{rtweet}` to use your specific account credentials. This is due to the fact that there are limits to how many tweets you can download in a given time period.
+
+By far the easiest way to do this is to simply request some tweets with the `search_tweets()` function. If you don't have any credentials stored on your system, a browser window should open asking you to authorize the request the first time you run a search. Once you do this, an authorization token will now be stored in your `.Renviron` file on your system so you don't have to re-authorize in this session (if you close R it will reauthenticate). You can access this file in several ways, but I like the `edit_r_environ()` function in the `{usethis}` package. 
+
+```{r eval=FALSE}
+usethis::edit_r_environ() # open the .Renviron file
+```
+
+This file contains environmental variables that R will use for various applications. **Do not change anything in this now!** We'll come back to this file later on.
+
+In this example, let's look for tweets using the word *cheugy*, which has been a major topic of discussion lately (see e.g. articles in [***The Guardian***](https://www.theguardian.com/media/shortcuts/2021/may/03/cheugy-the-word-you-need-when-passe-or-basic-just-wont-do), [***The Telegraph***](https://www.telegraph.co.uk/fashion/style/fashion-editor-cheugy-dont-care/), [***Vox***](https://www.vox.com/the-goods/2021/5/4/22418174/cheugy-hey-bestie-girlie-tiktok-girlboss), and [***The New York Times***](https://www.nytimes.com/2021/04/29/style/cheugy.html)). If you're not familiar with the term, [***Urban Dictionary***](https://www.urbandictionary.com/define.php?term=Cheugy) defines it as
+
+> Another way to describe aesthetics/people/experiences that are basic. It was coined by a now 23 year old white woman in 2013 while a student at Beverly Hills High School, on whom the irony is apparently lost. According to the *New York Times*, "cheugy (pronounced chew-gee) can be used, broadly, to describe someone who is out of date or trying too hard."
+
+So this is not a brand new word, but it's new enough for most people to find interesting. More important, it's a perfect example of how fast language can change, and Twitter, perhaps more than any other source, can help us investigate such rapid (and maybe fleeting) changes in the language of social media. 
+
+### Search tweets
+
+Here we'll use the `search_tweets()` function in `{rtweet}`, which takes a search term and returns a dataframe. The function returns tweets from all languages, so we'll make sure to include `"lang:en"` in our search term to limit our searches to English. The normal limit is 18k tweets in 15 minute span, but to keep it simple, we'll just do the most recent 200 tweets with this word in them (note this may get different results each time you run it).
+
+```{r eval=F}
+cheugy_tweets <- rtweet::search_tweets(
+  "cheugy lang:en", # the terms to search for 
+  n = 200, # the number of tweets to collect
+  include_rts = FALSE # don't include retweets
+)
+```
+
+```{r echo = F}
+# do this because markdown is not interactive
+jgtwitterapp_keylist <- readRDS(here("jgtwitterapp_keylist.rds"))
+
+my_token <- create_token(
+  app = "jgtwitterapp", # the name of my app
+  consumer_key = jgtwitterapp_keylist$api_key,
+  consumer_secret = jgtwitterapp_keylist$api_secret,
+  access_token = jgtwitterapp_keylist$access_token,
+  access_secret = jgtwitterapp_keylist$access_secret
+)
+
+cheugy_tweets <- rtweet::search_tweets(
+  "cheugy lang:en", # the terms to search for 
+  n = 200, # the number of tweets to collect
+  token = my_token,
+  include_rts = FALSE # don't include retweets
+)
+```
+
+
+Normally you'd want many more than this, and you can collect up to 18k in a 15 minute period, but I'm just keeping it quick and simple here. Now what do we get...
+
+```{r}
+names(cheugy_tweets)
+```
+ 
+There's A LOT of information here, and you can go to `?search_tweets` to see the full run down of what these columns contain. But you should be able to see some potentially useful info here. For example we can look at who tweeted (`screen_name`), the date and time of the tweet, and the location they supplied, if any.
+
+```{r}
+cheugy_tweets %>% 
+  select(screen_name, created_at, location) 
+```
+
+So there's lots we could do. We can see the text of the tweets in the `text` column.
+
+```{r}
+cheugy_tweets %>% 
+  select(text) 
+```
+
+We can see who is using this word and when.
+
+```{r}
+cheugy_tweets %>% 
+  select(screen_name, created_at) 
+```
+
+It's worth noting that the query syntax is a bit different from other packages. From the `?search_tweets` help file:
+
+> Spaces behave like boolean "AND" operator. To search for tweets containing at least one of multiple possible terms, separate each search term with spaces and "OR" (in caps). For example, the search q = "data science" looks for tweets containing both "data" and "science" located anywhere in the tweets and in any order. When "OR" is entered between search terms, query = "data OR science", Twitter's REST API should return any tweet that contains either "data" or "science." **It is also possible to search for exact phrases using double quotes. To do this, either wrap single quotes around a search query using double quotes, e.g., q = '"data science"' or escape each internal double quote with a single backslash, e.g., q = "\"data science\"".**
+
+So just a warning to be careful with your searches. For example, 
+if we wanted to look for *cheugy* or *cheug* (as in ["I'm a 'cheug' and proud of it"](https://www.nzherald.co.nz/lifestyle/nicola-alpe-im-a-cheug-and-proud-of-it-but-give-me-back-my-mom-jeans/XHZIYGIXRI3VMXIQ2LBOVNZ3UI/)) we'd need to specify the query like so.
+
+```{r eval = FALSE}
+cheugy_tweets <- rtweet::search_tweets(
+  q = "cheugy OR cheug lang:en", # the terms to search for 
+  n = 200, # the number of tweets to collect
+  include_rts = FALSE # don't include retweets
+)
+```
+
+```{r echo = F}
+cheugy_tweets <- rtweet::search_tweets(
+  q = "cheugy OR cheug lang:en", # the terms to search for 
+  n = 200, # the number of tweets to collect
+  token = my_token,
+  include_rts = FALSE # don't include retweets
+)
+```
+
+
+
+### Stream tweets
+
+Randomly sample (approximately 1%) from the live stream of all tweets. The 
+
+```{r}
+rt <- stream_tweets(
+  q = "cheugy OR cheug lang:en", 
+  timeout = 30
+  )
+```
+
+Or we could stream all tweets mentioning *cheugy* or *cheug* for a week.
+
+```{r eval = F}
+# stream tweets for a week (60 secs * 60 mins * 24 hours *  7 days)
+stream_tweets(
+  q = "cheugy OR cheug lang:en", 
+  timeout = 60 * 60 * 24 * 7,
+  file_name = here("data_raw", "live_cheugy_tweets.json"),
+  parse = FALSE
+  )
+```
+
+A couple things to note here. I've set this to save the **unparsed** output to the file "live_cheugy_tweets.json" in my project's "data_raw" folder. This is a better method for longer streams. As noted in the `?stream_tweets` documentation, 
+
+> By default, `parse = TRUE`, this function does the parsing for you. However, **for larger streams, or for automated scripts designed to continuously collect data, this should be set to `FALSE` as the parsing process can eat up processing resources and time.** For other uses, setting parse to `TRUE` saves you from having to sort and parse the messy list structure returned by Twitter.
+
+We can easily load and parse this to a tidy dataframe with `parse_stream()` like so.
+
+```{r}
+cheugy_tweets2 <- parse_stream(here("data_raw", "live_cheugy_tweets.json"))
+```
+
+
+### Get friends and followers
+
+It's also easy to track who follows and who is followed by a given user. The `get_friends()` function collects a list of accounts followed by a particular user. 
+
+```{r}
+# get user IDs of accounts followed by @Rbloggers 
+rblog_friends <- get_friends("@Rbloggers", n = 1000)
+```
+
+This gives us a dataframe with a single column of user IDs. If we want more info on these users we can find it with `lookup_users()`. 
+
+```{r}
+rblog_friends %>% 
+  pull(user_id) %>% # pull out the column as a vector
+  lookup_users()
+```
+The same applies to the `get_followers()` function, which gets the accounts following a user.
+
+```{r}
+# get user IDs of accounts following @Rbloggers 
+rblog_followers <- get_followers("@Rbloggers", n = 1000)
+
+rblog_followers %>% 
+  pull(user_id) %>% # pull out the column as a vector
+  lookup_users()
+```
+
+Both the `get_friends()` and `get_followers()` allow a maximum of 5000 for a single API call, and you are limited to 15 such calls per 15 minutes. You can see the documentation for these functions for more information.
+
+### Search users
+
+There are lots of functions for looking into Twitter data. For example, the `search_user()` function gives you up to 1000 users matching a search query.  
+
+```{r}
+rstats_users <- search_users("#rstats", n = 100)
+```
+
+
+
+```{r}
+rt <- search_tweets(
+  q = "cheugy OR cheug lang:en", # q is for query
+  geocode = lookup_coords("usa"), 
+  n = 100
+)
+
+## create lat/lng variables using all available tweet and profile geo-location data
+rt <- lat_lng(rt)
+
+## plot state boundaries
+par(mar = c(0, 0, 0, 0))
+maps::map("state", lwd = .25)
+
+## plot lat and lng points onto state map
+with(rt, points(lng, lat, pch = 20, cex = .75, col = rgb(0, .3, .7, .75)))
+```
+
+
+### Get timelines
+
+You can also search for the most 3200 tweets from a single user with `get_timelines()`. However, there's an added wrinkle to this function. If you try to run it like so, you're likely to get an error.
+
+```{r}
+bbc_tml <- get_timelines("@BBCNews", n = 100)
+```
+
+The issue appears to be that the default Twitter API token used by `{rtweet}` will not work for this. The solution is to create your own token and specify that in the `token = ...` argument. If you want to use this function, you should instead use its app authentication mechanism. To use twitter from R, you’ll need to learn a little more about what’s going on behind the scenes. The first important concept to grasp is that every request to the Twitter API has to go through an “app”. Normally, someone else has created the app for you, but now that you’re using twitter programmatically, you need to create your own app. (It’s still called an app even though you’ll be using it through an R package).
+
+#### Creating a Twitter app
+
+It's helpful to learn a little more about what's going on behind the scenes. The first thing to know is that every request to the Twitter API has to go through an "app". Normally, someone else has created the app for you, but now that you're using twitter programmatically, you need to create your own app. (It's still called an app even though you'll be using it through an R package).
+
+To create a Twitter app, you need to first apply for a free developer account by following the instructions at [**https://developer.twitter.com**](https://developer.twitter.com). Once you have been approved (which may take some time), go to the [**developer portal**](https://developer.twitter.com/en/portal/projects-and-apps) and click the "Create App" button at the bottom of the page. You'll need to give a name your app (the name is unimportant for our purposes), but needs to be unique across all twitter apps.
+
+After you've named your app, you'll see a screen that gives you some important information. These are your API key, your API secret key, and Bearer token:
+
+![Twitter API keys and bearer token](`r here("figures", "twitter_app_keys.png")`)
+
+You'll only see this once, so you need to record it in a secure location. For now you can copy these to a text file. Don't worry though---if you don't record these or lose them, you can always regenerate them.
+
+Once you've done this, click the "App settings" button, and go to the "Keys and tokens tab". Now as well as the API key and secret you recorded earlier, you'll also need to generate a “Access token and secret” which you can get by clicking the “Generate” button on the next to "Access Token and Secret":
+
+![Twitter Access keys and tokens](`r here("figures", "twitter_app_access.png")`)
+
+Again, record these somewhere secure. What I like to do is create list in R with these values, and save that to my project directory. This way I can easy load it when I start a new session.
+
+```{r eval = F}
+# Your values will differ 
+jgtwitterapp_keylist <- list(
+  api_key = "xxxxxxxxxxx",
+  api_secret = "xxxxxxxxxxx",
+  access_token = "xxxxxxxxxxx",
+  access_secret = "xxxxxxxxxxx",
+  bearer_token = "xxxxxxxxxxx"
+)
+# save to file
+saveRDS(jgtwitterapp_keylist, here("jgtwitterapp_keylist.rds"))
+```
+
+So when I want to use this with `{rtweet}`, I can just load it and create a token with `create_token`.
+
+```{r eval=F}
+jgtwitterapp_keylist <- readRDS(here("jgtwitterapp_keylist.rds"))
+
+my_token <- create_token(
+  app = "jgtwitterapp", # the name of my app
+  consumer_key = jgtwitterapp_keylist$api_key,
+  consumer_secret = jgtwitterapp_keylist$api_secret,
+  access_token = jgtwitterapp_keylist$access_token,
+  access_secret = jgtwitterapp_keylist$access_secret
+)
+```
+
+Now I should be able to get the timeline for a user account.
+
+```{r}
+bbc_tml <- get_timeline(
+  "@BBCNews", 
+  n = 100,
+  token = my_token
+  )
+
+bbc_tml
+```
+
+It works! Annoyingly, at the moment it seems that you need to run this same `create_token()` process each time you start a new R session. This is a bit clunky, but it's the only way I have found to make it work consistently. The `get_token()` function should be able to load your app token automatically, but I think the code is a bit buggy. You can see [**this thread**](https://github.com/ropensci/rtweet/issues/418) for more discussion.
+
+### Locating tweets
+
+We can also try to locate tweets geographically. One issue with `{rtweet}` is that it does not seem to work well for getting locations and geo coordinates for tweets. The package provides a function `lookup_coords()` for looking up coordinates, but this relies on getting information on Google's API which apparently does not play well with others. From the `lookup_coords()` help file:
+
+> Since Google Maps implemented stricter API requirements, sending requests to Google's API isn't very convenient. To enable basic uses without requiring a Google Maps API key, a number of the major cities throughout the word and the following two larger locations are baked into this function: 'world' and 'usa'. If 'world' is supplied then a bounding box of maximum latitutde/longitude values, i.e., c(-180, -90, 180, 90), and a center point c(0, 0) are returned. If 'usa' is supplied then estimates of the United States' bounding box and mid-point are returned. To specify a city, provide the city name followed by a space and then the US state abbreviation or country name. To see a list of all included cities, enter `rtweet:::citycoords` in the R console to see coordinates data.
+
+We can see some of the cities listed here.
+
+```{r}
+rtweet:::citycoords
+```
+
+So for example, if we wanted to collect tweets from here in Birmingham, we'd use the name in the dataframe above in `lookup_coords()` like so.
+
+```{r}
+lookup_coords("birmingham england")
+```
+
+And we'll include a `geocode` argument in our search to get only tweets from within these coordinates. Now, there 
+
+```{r}
+bham_tweets <- search_tweets(
+  q = "lang:en",
+  n = 1000,
+  include_rts = FALSE, # don't include retweets
+  geocode = lookup_coords("birmingham england")
+)
+
+bham_tweets %>% 
+  select(screen_name, location, place_full_name, geo_coords)
+```
+
+There are several sources of geographic information in our tweets.
+
+- `location`: This is the *user-defined* location for an account's profile. This can really be anything, so you have to be careful. 
+- `place_name` and `place_full_name`: When users decide to assign a location to their Tweet, they are presented with a list of candidate Twitter Places, and these contain the human-readable names of those places.
+- `geo_coords`, `coord_coords`, `bbox_coords`: These contain the latitude and longitude coordinates of the tweet, if available
+
+
+```{r}
+bham_tweets %>% 
+  count(location, sort = T)
+```
+
+
+```{r}
+bham_tweets <- lat_lng(bham_tweets)
+bham_tweets %>% 
+  select(lat, lng)
+```
+
+
+
+There's a lot more you can do with `{rtweet}`, and I encourage you to check out some of the online guides available, e.g. the creator Michael Kearney's help  [**here**](https://cran.r-project.org/web/packages/rtweet/vignettes/intro.html) and [**here**](https://mkearney.github.io/nicar_tworkshop/#41).
+
+
+# Working with general APIs
+
+Not all APIs have convenient packages dedicated to the their use, so it's likely that you may need to interface with an API directly. To do this we'll use the `{httr}` package to work with Web APIs. Again, Web APIs involve two computers: a client and a server. The client submits a Hypertext Transfer Protocol (HTTP) **request** to the server and the server returns a **response** to the client. The response contains status information about the request and may also contain the requested content. The packages we've just seen do all this as well, but it happens behind the scenes. Now we're going to pull the curtain back a bit and see how it works. But this can be complicated, so I'll just cover the very basics here.
+
+I recommend [**Getting started with `httr` vignette**](https://cran.r-project.org/web/packages/httr/vignettes/quickstart.html) for more details. The other library we'll use is `{jsonlite}`, which is 
+
+```{r}
+library(httr)
+library(jsonlite)
+```
+
+
+## Basic steps
+
+In the simplest case, to make a request all you need is a URL for the API. The example I'll use here is [**https://github.com/beanboi7/yomomma-apiv2**](https://github.com/beanboi7/yomomma-apiv2), which is  free site that stores "yo momma" jokes. I found this among [**this list of free APIs**](https://github.com/public-apis/public-apis). There are many more you can find if you poke around. 
+
+We send a request with the `GET()` function, along with information. If you go to the website above, it gives information about the **endpoint**, which is the URL we'll use in our request, as well as any query parameters that we can set. Generally, most sites with web APIs will give you some details about how to use them.
+
+So we store our endpoint, and include it in our `GET()` request:
+
+```{r}
+ym_path <- "https://yomomma-api.herokuapp.com/jokes"
+
+ym_request <- GET(
+  url = ym_path, 
+  query = list(count = 10) # the number of jokes to get
+)
+ym_request
+```
+
+We can check whether our request worked just to be sure.
+
+```{r}
+http_status(ym_request)
+```
+
+That's what we want to see. Now we can extract the content.
+
+```{r}
+ym_content <- content(ym_request, as = "text", encoding = "UTF-8")
+ym_content
+```
+
+This isn't in a nice format, and this is because the content is in **JSON**. JSON stands for JavaScript Object Notation. JSON is useful because it is easily readable by a computer, and for this reason, it has become the primary way that data is communicated through APIs. Most APIs will send their responses in JSON format. 
+
+This is where the `{jsonlite}` package comes in, since it contains useful funcitons for converting JSON code into more familiar data objects in R. 
+
+```{r}
+# flatten tells it to create a single unnested dataframe
+ym_jokes_df <- fromJSON(ym_content, flatten = TRUE) %>%
+  data.frame()
+
+ym_jokes_df
+```
+
+That's all there is to it! In reality things are not always that simple, and for access to many APIs you will need to register an application with the website. I've included a few more examples below.
+
+## More examples
+
+### Cat facts
+
+You can scrape list of facts about cats here: [**https://alexwohlbruck.github.io/cat-facts/docs/**](https://alexwohlbruck.github.io/cat-facts/docs/)
+
+```{r}
+cat_path <- "https://cat-fact.herokuapp.com/facts"
+
+cat_facts <- GET(
+  url = cat_path,
+)
+
+http_status(cat_facts)
+```
+
+
+```{r}
+cat_df <- content(cat_facts, as = "text", encoding = "UTF-8") %>%
+  fromJSON(flatten = TRUE) %>%
+  data.frame()
+
+cat_df %>%
+  select(text)
+```
+
+### Articles in *the Guardian* 
+
+*The Guardian* has a free open API for anyone to use. All you need to do is register for a developer app here: [**https://open-platform.theguardian.com/documentation/**](https://open-platform.theguardian.com/documentation/) 
+
+Once you do you will be sent your API key and get a URL to use that will look like this.
+
+```{r eval = F}
+# the XXXXXXXXXXXXXXXXXX will be your API key
+"https://content.guardianapis.com/search?api-key=XXXXXXXXXXXXXXXXXXXXXXXXXXX"
+```
+
+Alternatively, you can save your key and then load it when you need it. Your key should not be shared (which is why I don't include it here).
+
+```{r}
+# read in my saved key and paste it to the path
+gd_api <- readRDS(here::here("guardian_api.rds"))
+gd_path <- paste0("https://content.guardianapis.com/search?api-key=",
+                  gd_api$api_key)
+# Loaded
+gd_request <- GET(
+  url = gd_path,
+  query = list(
+    q = "dinosaur" # pieces mentioning dinosaurs
+  )
+)
+
+# Check status
+http_status(gd_request)
+```
+
+Get the content and parse the JSON code. Different sites provide different information, so you need to check it.
+
+```{r}
+gd_content <- content(gd_request, as = "text", encoding = "UTF-8") %>%
+  fromJSON(flatten = TRUE) %>%
+  data.frame()
+# What's in there?
+names(gd_content)
+```
+
+Look at the date and titles
+
+```{r}
+gd_content %>%
+  select(response.results.webPublicationDate, response.results.webTitle)
+```
+
+
+### Entries in the Oxford English Dictionary 
+
+Again, you'll need to register a developer account ([**https://developer.oxforddictionaries.com/**](https://developer.oxforddictionaries.com/)), and you can get a free version (with limits) easily. In this case, you'll need both your app ID and your app key, and we'll include these in the `add_headers()` argument for the `GET()` request. I figured this out by looking at the little example of the Python code at the bottom of the developer page (they don't have an R example, but the two work very similarly).
+
+![**Information about how to create your GET request from the OED API**](`r here("figures", "oed_help.png")`)
+
+```{r}
+oed_keys <- readRDS(here::here("oed_keys.rds"))
+
+# note that the path contains the word you are searching for
+word <- "dinosaur"
+ox_path <- paste0("https://od-api.oxforddictionaries.com/api/v2/entries/en-gb/", word)
+
+ox_request <- GET(
+  url = ox_path,
+  add_headers(
+    app_id = oed_keys$app_id,
+    app_key = oed_keys$app_key
+  ))
+
+http_status(ox_request)
+```
+
+It works! Now we could create our own wrapper function that gets the request and parses it all in one go:
+
+```{r}
+# function for getting entries from the OED API
+get_OED_entry <- function(word, lang = "en-gb"){
+  # Load the keys if not already in the workspace
+  if(!"oed_keys" %in% ls()) readRDS(here::here("oed_keys.rds"))
+  
+  path <- paste(
+    "https://od-api.oxforddictionaries.com/api/v2/entries",
+    lang,
+    tolower(word),
+    sep = "/"
+  )
+  ox_request <- GET(
+    url = path,
+    add_headers(
+      app_id = oed_keys$app_id,
+      app_key = oed_keys$app_key
+    ))
+
+  if(ox_request$status_code != 200){
+    http_status(ox_request) %>%
+      print()
+  } else {
+    ox_request %>%
+      content(as = "text", encoding = "UTF-8") %>%
+      fromJSON(flatten = TRUE) %>%
+      data.frame()
+  }
+}
+```
+
+
+```{r}
+kraken_entry <- get_OED_entry("kraken")
+kraken_entry %>% 
+  glimpse()
+```
+
+Notice that the object returned by the API is a complex list with multiple embedded lists and dataframes, so you'l have to do some exploration
+
+```{r}
+kraken_entry$results.lexicalEntries %>% 
+  glimpse()
+```
+
+This is an unnamed list whose first argument is a dataframe of entries. We can see what this looks like:
+
+```{r}
+kraken_entry$results.lexicalEntries %>% 
+  first() %>% # pull the first item of a list
+  glimpse()
+```
+
+So the entries are a list with one dataframe as its argument (this is getting ridiculous...). Let's see what that looks like...
+
+```{r}
+kraken_entry$results.lexicalEntries %>% 
+  first() %>% 
+  pull(entries) %>% # pull the content of a data.frame column 
+  first() %>% 
+  glimpse()
+```
+
+Oh good grief! This seems crazy, but it actually makes some sense, as there is a lot of information in a dictionary entry, and a complex object like this is not a bad way to keep it organised. Once we know the structure, it would be rather simple to create functions to get it quicky.
+
+```{r}
+# get our definition
+kraken_entry$results.lexicalEntries %>% 
+  first() %>% 
+  pull(entries) %>% # pull the content of a data.frame column 
+  first() %>% 
+  pull(senses) %>% 
+  first() %>% 
+  pull(definitions) %>% 
+  simplify() # collapse a list to a vector
+```
+So we have a process for getting definitions. We can test it on a form with multiple meanings.
+
+```{r}
+bank_entry <- get_OED_entry("bank")
+
+bank_entry$results.lexicalEntries %>% 
+  first() %>% 
+  pull(entries) %>% # pull the content of a data.frame column 
+  first() %>% 
+  pull(senses) %>% 
+  first() %>% 
+  pull(definitions) %>% 
+  simplify()
+```
+
+Nice. You can imagine creating functions that get definitions (or pronunciations, etymologies, etc) from entry objects very easily.
+
+# References
+
+
+
+
+
+
+
+
