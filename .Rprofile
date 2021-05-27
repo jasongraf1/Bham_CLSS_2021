@@ -27,7 +27,7 @@ options(stringsAsFactors = FALSE)
 # packages to be automatically loaded when project starts. Uncomment as desired
 pkgs <- c(
   "tidyverse", # for data wrangling, etc.
-  "here", # for paths
+  "here" # for paths
   # ## for plotting
   # "gridExtra",
   # "scales",
