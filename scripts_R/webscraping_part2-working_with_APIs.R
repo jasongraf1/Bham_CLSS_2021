@@ -38,8 +38,12 @@ spinosaur_threads %>%
 
 spinosaur_threads %>%
   arrange(title) %>%
-  select(num_comments, title, author, comment) %>%
-  arrange(desc(num_comments)) # put most popular thread first
+  select(num_comments, title, author) %>%
+  arrange(desc(num_comments)) %>% # put most popular thread first
+  head()
+
+spinosaur_threads$title %>%
+  unique()
 
 # graph the comment chains with `construct_graph()`
 thread_chain <- spinosaur_threads %>%
@@ -239,8 +243,9 @@ gd_content <- content(gd_request, as = "text", encoding = "UTF-8") %>%
 names(gd_content)
 
 # Look at the date and titles
-d_content %>%
+gd_content %>%
   select(response.results.webPublicationDate, response.results.webTitle)
+
 
 ## Oxford English Dictionary --------------------------------------------
 
