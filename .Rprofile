@@ -1,11 +1,11 @@
 ## .Rprofile
 
 ## Set some default options. Comment our as desired.
-options(papersize = "a4")
-options(continue = "... ")
-options(scipen = 7)
-options(help_type = "html")
-options(stringsAsFactors = FALSE)
+# options(papersize = "a4")
+# options(continue = "... ")
+# options(scipen = 7)
+# options(help_type = "html")
+# options(stringsAsFactors = FALSE)
 
 ## Create project directories if they don't already exist
 .First <- function() {
@@ -14,7 +14,7 @@ options(stringsAsFactors = FALSE)
   dir.create(here::here("data_raw"), showWarnings = F)
   dir.create(here::here("docs"), showWarnings = F)
   dir.create(here::here("figures"), showWarnings = F)
-  dir.create(here::here("keys"), showWarnings = F)
+  # dir.create(here::here("keys"), showWarnings = F)
   dir.create(here::here("markdown"), showWarnings = F)
   # dir.create(here::here("model_output"), showWarnings = F)
   dir.create(here::here("scripts_R"), showWarnings = F)
@@ -28,13 +28,6 @@ options(stringsAsFactors = FALSE)
 pkgs <- c(
   "tidyverse", # for data wrangling, etc.
   "here" # for paths
-  # ## for plotting
-  # "gridExtra",
-  # "scales",
-  # "patchwork",
-  # "ggpubr",
-  # "ggsci",
-  # "RColorBrewer"
 )
 
 ## Install all necessary packages, if not already installed
@@ -49,7 +42,8 @@ if(interactive()){
 .Last <- function(){
   if(interactive()){
     top_msg <- paste0(
-      "Session Info for VADIS CUP project\n",
+      "Session Info for Web scraping with R project\n",
+      "University of Birmingham Corpus Linguistics Summer School",
       "Author: Jason Grafmiller\n",
       "Last modified: ", Sys.time(), "\n\n")
     writeLines(utils::capture.output(cat(top_msg), utils::sessionInfo()), "sessionInfo.txt")
