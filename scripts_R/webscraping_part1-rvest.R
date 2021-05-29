@@ -12,7 +12,6 @@
 
 library(tidyverse, quietly = T) # for convenient data wrangling and styling
 library(tictoc) # for timing processes
-library(tidytext) # for text mining
 library(here) # for creating consistent file paths
 library(rvest) # for scraping
 
@@ -81,7 +80,7 @@ books_df <- books_df %>%
   mutate(description = map_chr(url, get_description_from_url))
 toc()
 
-books_df
+books_df[10, "description"]
 
 ## Method 2 --------------------------------------------------------------
 
@@ -90,15 +89,9 @@ books_session <- session(books_main_url)
 
 # create function for getting a description from a link in a live session
 get_description_from_link <- function(title){
-  # use tryCatch to deal with any possible errors
-  possibleError <- tryCatch(
-    page <- books_session %>%
-      session_follow_link(title) %>%
-      read_html(),
-    error = function(e) e
-  )
-  # move on to the next link if an error is found
-  if(inherits(possibleError, "error")) next
+  page <- books_session %>%
+    session_follow_link(title) %>%
+    read_html()
 
   description <- page %>%
     html_elements("#product_description+ p") %>%
@@ -114,7 +107,7 @@ books_df2 <- books_df %>%
   mutate(description = map_chr(title, get_description_from_link))
 toc()
 
-books_df
+books_df2[10, "description"]
 
 
 # Save data ---------------------------------------------------------------
