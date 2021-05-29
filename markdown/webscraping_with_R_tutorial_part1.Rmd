@@ -87,7 +87,11 @@ The first thing to do is open the page in a browser to get a sense of what it lo
 
 [![***Books to Scrape page***](`r here("figures", "books1.png")` "http://books.toscrape.com/")](http://books.toscrape.com/)
 
-The first thing we'll do is simply get the titles of every book listed on this first page (we'll ignore the other pages for now). `{rvest}` can do this for us, but first we must know how to identify the correct element on the page. What we need to do is find the correct CSS selector for the book titles. We'll do this using the Selector Gadget by following these steps (or watch my [**short video tutorial**]() on the BCLSS Canvas page):
+The first thing we'll do is simply get the titles of every book listed on this first page (we'll ignore the other pages for now). `{rvest}` can do this for us, but first we must know how to identify the correct element on the page. What we need to do is find the correct CSS selector for the book titles. 
+
+### Getting selectors with Selector Gadget
+
+We'll do this using the Selector Gadget by following these steps (or watch my [**short video tutorial**]() on the BCLSS Canvas page):
 
 1. Click on the Selector Gadget extension in your browser. After doing so, you should see orange-ish boxes appear around things as you move the pointer around the page. You should also see a small box appear in the lower right.
 2. Find one of the elements that you want to extract, e.g. the first book title, and click on it. This element should turn green, and *all the other elements on the page that share that element's selector* should be highlighted in yellow. 
@@ -163,6 +167,50 @@ books_titles
 
 Much better. Now we can move on. I included this here to show that this method is not foolproof, and you are bound to run into problems at various times. The important thing is not to panic, and carefully go back over each step in the process to try to diagnose where the error might be. 
 
+### Getting selectors with  the developer console
+
+If you don't want to use Selector Gadget, you can use the developer console available for most browsers. In Chrome, you do this by right clicking on the element you want, and going to "Inspect" in the menu.
+
+![**Inspect element in Google Chrome**](`r here("figures", "inspect_element.png")`)
+
+This opens up the developer console, where you can find the element you want.
+
+![**Developer console in Google Chrome**](`r here("figures", "dev_console1.png")`)
+
+Once you find what you want, you can right click and select **Copy > Copy selector**.
+
+![**Copy selector in the developer console**](`r here("figures", "dev_console2.png")`)
+
+Then just copy this into the `html_elements()` function.
+
+```{r}
+selector <- "#default > div > div > div > div > section > div:nth-child(2) > ol > li:nth-child(1) > article > h3 > a"
+
+books_title_nodes <- books_main_page %>% 
+  html_elements(selector)
+```
+
+A couple things to note. First, this selector contains the full element hierarchy in which the chosen element is embedded. You may not need this to identify your element, as the Selector Gadget example shows, but it is more precise. Second, this selector identifies the *specific* element you clicked on, and there will be only one unique result.
+
+```{r}
+books_title_nodes
+```
+
+So you may need to edit the selector to identify the general kind of element you want. Usually all you need to do is remove the lowest, i.e. rightmost, `nth-child(1)` part in the selector to do this. This bit of code selects only the `<li>` element that is the first child of its parent (here an ordered list `<ol>` element) in the document.
+
+![**Parent and child elements**](`r here("figures", "dev_console3.png")`)
+
+So if we remove that and try again, we now select any `<li>` element matching the rest of the code. 
+
+```{r}
+# change "li:nth-child(1)" to "li"
+selector <- "#default > div > div > div > div > section > div:nth-child(2) > ol > li > article > h3 > a"
+
+books_title_nodes <- books_main_page %>% 
+  html_elements(selector)
+books_title_nodes
+```
+Perfect! That's all there is to it.
 
 ## Scraping a book's description text
 
