@@ -325,25 +325,6 @@ rstats_users <- search_users("#rstats", n = 100)
 
 
 
-```{r}
-rt <- search_tweets(
-  q = "cheugy OR cheug lang:en", # q is for query
-  geocode = lookup_coords("usa"), 
-  n = 100
-)
-
-## create lat/lng variables using all available tweet and profile geo-location data
-rt <- lat_lng(rt)
-
-## plot state boundaries
-par(mar = c(0, 0, 0, 0))
-maps::map("state", lwd = .25)
-
-## plot lat and lng points onto state map
-with(rt, points(lng, lat, pch = 20, cex = .75, col = rgb(0, .3, .7, .75)))
-```
-
-
 ### Get timelines
 
 You can also search for the most 3200 tweets from a single user with `get_timelines()`. However, there's an added wrinkle to this function. If you try to run it like so, you're likely to get an error.
@@ -375,11 +356,11 @@ Again, record these somewhere secure. What I like to do is create list in R with
 ```{r eval = F}
 # Your values will differ 
 jgtwitterapp_keylist <- list(
-  api_key = "xxxxxxxxxxx",
-  api_secret = "xxxxxxxxxxx",
-  access_token = "xxxxxxxxxxx",
-  access_secret = "xxxxxxxxxxx",
-  bearer_token = "xxxxxxxxxxx"
+  api_key = "INSERT YOUR KEY HERE",
+  api_secret = "INSERT YOUR SECRET KEY HERE",
+  access_token = "INSERT YOUR ACCESS TOKEN HERE",
+  access_secret = "INSERT YOUR ACCESS SECRET HERE",
+  bearer_token = "INSERT YOUR BEARER TOKEN HERE"
 )
 # save to file
 saveRDS(jgtwitterapp_keylist, here("keys", "jgtwitterapp_keys.rds"))
@@ -415,11 +396,11 @@ It works! Annoyingly, at the moment it seems that you need to run this same `cre
 
 ### Locating tweets
 
-We can also try to locate tweets geographically. One issue with `{rtweet}` is that it does not seem to work well for getting locations and geo coordinates for tweets. The package provides a function `lookup_coords()` for looking up coordinates, but this relies on getting information on Google's API which apparently does not play well with others. From the `lookup_coords()` help file:
+We can also try to locate tweets geographically. This is very useful for doing dialectology (see e.g. [**here**]()http://tweetolectology.com/), or for just making sure your data comes from the location you want. One issue with `{rtweet}` however is that it does not seem to work well for getting locations and geo coordinates for tweets. The package provides a function `lookup_coords()` for looking up coordinates, but this relies on getting information on Google's API which apparently does not play well with others. From the `lookup_coords()` help file:
 
 > Since Google Maps implemented stricter API requirements, sending requests to Google's API isn't very convenient. To enable basic uses without requiring a Google Maps API key, a number of the major cities throughout the word and the following two larger locations are baked into this function: 'world' and 'usa'. If 'world' is supplied then a bounding box of maximum latitutde/longitude values, i.e., c(-180, -90, 180, 90), and a center point c(0, 0) are returned. If 'usa' is supplied then estimates of the United States' bounding box and mid-point are returned. To specify a city, provide the city name followed by a space and then the US state abbreviation or country name. To see a list of all included cities, enter `rtweet:::citycoords` in the R console to see coordinates data.
 
-We can see some of the cities listed here.
+We can see some of the cities listed here. (*Note: I've found that for some reason the US cities (e.g. "new york us" or "columbus ohio us") in this list don't seem to be working with `search_tweets`. I'm not sure why this is, and can't find any information online. The UK and other European cities do seem to work though.*)
 
 ```{r}
 rtweet:::citycoords
@@ -442,7 +423,7 @@ bham_tweets <- search_tweets(
 )
 
 bham_tweets %>% 
-  select(screen_name, location, place_full_name, geo_coords)
+  select(screen_name, location, place_name, geo_coords)
 ```
 
 There are several sources of geographic information in our tweets.
@@ -456,17 +437,97 @@ There are several sources of geographic information in our tweets.
 bham_tweets %>% 
   count(location, sort = T)
 ```
-
+You can find the latitude and longitude of those tweets that have them.
 
 ```{r}
 bham_tweets <- lat_lng(bham_tweets)
 bham_tweets %>% 
   select(lat, lng)
 ```
+We can even map the locations of those that have the coordinates. We'll use the `{sf}` package for working with geographical boundaries, and I've included a file `postcode-boundaries.kml` which contains all the information about postcode boundaries in the UK (I got this [**here**](https://www.freemaptools.com/download-uk-postcode-outcode-boundaries.htm). We read this in with `st_read()`
+
+```{r}
+library(sf)
+# read in the geographical data
+postcodes <- here("data_raw", "postcode-boundaries.kml") %>% 
+  st_read()
+```
+Now we can plot the data in `{ggplot2}` with the `geom_sf()` layer.
+
+```{r fig.cap="Map of postcodes in the UK"}
+uk_map <- ggplot(data = postcodes) +
+  geom_sf(fill = "grey95") +
+  theme(panel.background = element_rect(fill = "lightblue"))
+uk_map
+```
+Easy! Now we can just zoom in on the Birmingham area and map our tweets.
+
+```{r}
+# filter out tweets with missing coords
+bham_tweets_located <- bham_tweets %>% 
+  dplyr::filter(!is.na(lat))
+
+# read in a small dataframe of local cities
+wm_towns <- read.csv(here("data_raw", "wm_towns.csv"))
+
+uk_map +
+  coord_sf(xlim = c(-2.4, -1.5), ylim = c(52.1, 52.6), expand = FALSE) +
+  geom_text(
+    data = wm_towns,
+    aes(x = long, y = lat, label = city)
+    ) +
+  geom_point(
+    data = bham_tweets_located,
+    aes(x = lng, y = lat),
+    color = "red", alpha = .4
+  )
+```
+It's not the best, but there is a lot more you could do if you're keen on using geolocated data.  
+
+
+<!-- There's a lot of data here. Even if we just focus on the UK, we can see there's way too much information. -->
+
+<!-- ```{r} -->
+<!-- worldmap %>%  -->
+<!--   dplyr::filter(region == "UK") -->
+<!-- ``` -->
+
+<!-- So we'll simplify things by finding the maximal bounds for our coordinates -->
+
+<!-- ```{r} -->
+<!-- worldmap %>%  -->
+<!--   dplyr::filter(region == "UK") %>%  -->
+<!--   summarise( -->
+<!--     min_lat = min(lat), -->
+<!--     max_lat = max(lat), -->
+<!--     min_long = min(long), -->
+<!--     max_long = max(long) -->
+<!--    ) -->
+<!-- ``` -->
+
+<!-- We can use these as a guide to set the limits of our map like so. -->
+
+<!-- ```{r} -->
+<!-- uk_blank <- worldmap %>%  -->
+<!--   ggplot() +  -->
+<!--   geom_polygon(aes(x = long, y = lat, group = group), -->
+<!--                fill = "grey95", color = "black") +  -->
+<!--   coord_fixed( -->
+<!--     ratio = 1.3, # set the aspect ratio -->
+<!--     xlim = c(-10,3),  -->
+<!--     ylim = c(50.3, 59) -->
+<!--     ) + -->
+<!--   theme(panel.background = element_rect(fill = "lightblue")) -->
+<!-- uk_blank -->
+<!-- ``` -->
 
 
 
-There's a lot more you can do with `{rtweet}`, and I encourage you to check out some of the online guides available, e.g. the creator Michael Kearney's help  [**here**](https://cran.r-project.org/web/packages/rtweet/vignettes/intro.html) and [**here**](https://mkearney.github.io/nicar_tworkshop/#41).
+There's a lot more you can do with `{rtweet}`, and I encourage you to check out some of the online guides available, e.g. the creator Michael Kearney's help  [**here**](https://cran.r-project.org/web/packages/rtweet/vignettes/intro.html) and [**here**](https://mkearney.github.io/nicar_tworkshop/#41). 
+
+Alternatively, there is the `{twitteR}` package, which offers some of the same functionality as `{rtweet}`. You can find help on how to use `{twitteR}` in [**this vignette**](http://geoffjentry.hexdump.org/twitteR.pdf).
+
+
 
 
 # Working with general APIs
