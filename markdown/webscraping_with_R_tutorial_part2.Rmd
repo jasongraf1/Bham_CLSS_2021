@@ -484,45 +484,6 @@ uk_map +
 ```
 It's not the best, but there is a lot more you could do if you're keen on using geolocated data.  
 
-
-<!-- There's a lot of data here. Even if we just focus on the UK, we can see there's way too much information. -->
-
-<!-- ```{r} -->
-<!-- worldmap %>%  -->
-<!--   dplyr::filter(region == "UK") -->
-<!-- ``` -->
-
-<!-- So we'll simplify things by finding the maximal bounds for our coordinates -->
-
-<!-- ```{r} -->
-<!-- worldmap %>%  -->
-<!--   dplyr::filter(region == "UK") %>%  -->
-<!--   summarise( -->
-<!--     min_lat = min(lat), -->
-<!--     max_lat = max(lat), -->
-<!--     min_long = min(long), -->
-<!--     max_long = max(long) -->
-<!--    ) -->
-<!-- ``` -->
-
-<!-- We can use these as a guide to set the limits of our map like so. -->
-
-<!-- ```{r} -->
-<!-- uk_blank <- worldmap %>%  -->
-<!--   ggplot() +  -->
-<!--   geom_polygon(aes(x = long, y = lat, group = group), -->
-<!--                fill = "grey95", color = "black") +  -->
-<!--   coord_fixed( -->
-<!--     ratio = 1.3, # set the aspect ratio -->
-<!--     xlim = c(-10,3),  -->
-<!--     ylim = c(50.3, 59) -->
-<!--     ) + -->
-<!--   theme(panel.background = element_rect(fill = "lightblue")) -->
-<!-- uk_blank -->
-<!-- ``` -->
-
-
-
 There's a lot more you can do with `{rtweet}`, and I encourage you to check out some of the online guides available, e.g. the creator Michael Kearney's help  [**here**](https://cran.r-project.org/web/packages/rtweet/vignettes/intro.html) and [**here**](https://mkearney.github.io/nicar_tworkshop/#41). 
 
 Alternatively, there is the `{twitteR}` package, which offers some of the same functionality as `{rtweet}`. You can find help on how to use `{twitteR}` in [**this vignette**](http://geoffjentry.hexdump.org/twitteR.pdf).
