@@ -84,6 +84,12 @@ books_df[10, "description"]
 
 ## Method 2 --------------------------------------------------------------
 
+books_df <- data.frame(
+  url = paste(books_main_url, books_urls, sep = ""),
+  title = books_titles,
+  description = NA
+)
+
 # start a session
 books_session <- session(books_main_url)
 
