@@ -107,7 +107,7 @@ page3_df <- page3_df %>%
 
 
 # Q4 ----------------------------------------------------------------------
-# Scrape only the titles of the books contained in the first 10 pages of the https://books.toscrape.com/ (Links to an external site.) site.
+# Scrape only the titles of the books contained in the first 10 pages of the https://books.toscrape.com/ site.
 
 # Note that the pages all have URLs of https://books.toscrape.com/catalogue/page-XX.html, where 'XX' is the number of the page. We can create a vector of URLs with this info.
 
@@ -129,7 +129,7 @@ ten_titles <- map(ten_pages_url, get_titles_on_page) %>%
 ten_titles
 
 # Q5 ----------------------------------------------------------------------
-# Scrape the author names and the content of the description in their 'about' page (e.g. this page (Links to an external site.)) from the 10 authors (some are duplicates) listed on the first page of the https://quotes.toscrape.com/ (Links to an external site.) site. Put the results into a dataframe with two columns: 'Author' and 'Description'. Hint: you may need scrape the author names and URLs of the 'about' pages separately.
+# Scrape the author names and the content of the description in their 'about' page (e.g. https://quotes.toscrape.com/author/Albert-Einstein/) from the 10 authors (some are duplicates) listed on the first page of the https://quotes.toscrape.com/ site. Put the results into a dataframe with two columns: 'Author' and 'Description'. Hint: you may need scrape the author names and URLs of the 'about' pages separately.
 
 quote_url <- "https://quotes.toscrape.com/"
 
