@@ -51,7 +51,7 @@ Knowledge of HTML and CSS is also a big plus, but it is not a requirement for th
 
 All web pages have an expected kind of structure, which usually consists of three types of code: **markup** (HTML and XML), **CSS**, and **JavaScript**. We'll focus on only the first two here. In a nutshell, these different kinds of code are used by sites to tell web browsers what information the document contains, how it is structured, and how to display it. 
 
-Webscraping tools make extensive use of HTML, XML, and CSS code to identify and extract data. All we need to do is tell our scraping tools which **selectors** to look for, and they will go through a page (or pages) and pull out the data for us. So knowing a little bit about HTML and CSS is really helpful. If you'd like to familiarize yourself with HTML and CSS more, watch the first two videos for this session. I alos highly recommend the tutorials on [**w3schools.com**](https://www.w3schools.com/). Just the basics should be enough for what we'll be doing. 
+Webscraping tools make extensive use of HTML, XML, and CSS code to identify and extract data. All we need to do is tell our scraping tools which **selectors** to look for, and they will go through a page (or pages) and pull out the data for us. So knowing a little bit about HTML and CSS is really helpful. If you'd like to familiarize yourself with HTML and CSS more, watch the first two videos for this session. I also highly recommend the tutorials on [**w3schools.com**](https://www.w3schools.com/). Just the basics should be enough for what we'll be doing. 
 
 # Getting started
 

@@ -116,7 +116,7 @@ spinosaur_threads %>%
 ```
 
 
-This is cool. It's clear that these might need some cleaning up, but the data is all there. Super simple!
+This is cool. It's clear that the text might need some cleaning up, but the data is all there. Super simple!
 
 There are a couple more things to mention about this package. The first is that we can easily graph the comment chains contained in a given thread. This tells us which comments are replied to, and how is replying to them. For example we have the thread titled "[Question] Questions about the Spinosaurs." authored by user *A_Charmandur*, which has 17 total comments.
 
@@ -197,7 +197,7 @@ cheugy_tweets <- rtweet::search_tweets(
 ```
 
 
-Normally you'd want many more than this, and you can collect up to 18k in a 15 minute period, but I'm just keeping it quick and simple here. Now what do we get...
+Now what do we get...
 
 ```{r}
 names(cheugy_tweets)
@@ -210,7 +210,7 @@ cheugy_tweets %>%
   select(screen_name, created_at, location) 
 ```
 
-So there's lots we could do. We can see the text of the tweets in the `text` column.
+So there's lots we could do. For example, we can see the text of the tweets in the `text` column.
 
 ```{r}
 cheugy_tweets %>% 
@@ -252,12 +252,12 @@ cheugy_tweets <- rtweet::search_tweets(
 
 ### Stream tweets
 
-Randomly sample (approximately 1%) from the live stream of all tweets. The 
+We can randomly sample (approximately 1%) from the live stream of all tweets with `stream_tweets()`. 
 
 ```{r}
 rt <- stream_tweets(
   q = "cheugy OR cheug lang:en", 
-  timeout = 30
+  timeout = 30 # time in seconds to stream
   )
 ```
 
@@ -265,7 +265,7 @@ Or we could stream all tweets mentioning *cheugy* or *cheug* for a week.
 
 ```{r eval = F}
 # stream tweets for a week (60 secs * 60 mins * 24 hours *  7 days)
-# I didn't run this
+# Don't RUN THIS!
 stream_tweets(
   q = "cheugy OR cheug lang:en", 
   timeout = 60 * 60 * 24 * 7,
@@ -327,19 +327,19 @@ rstats_users <- search_users("#rstats", n = 100)
 
 ### Get timelines
 
-You can also search for the most 3200 tweets from a single user with `get_timelines()`. However, there's an added wrinkle to this function. If you try to run it like so, you're likely to get an error.
+You can also search for the most 3200 tweets from a single user with `get_timeline()`. However, there's an added wrinkle to this function. If you try to run it like so, you're likely to get an error.
 
 ```{r}
-bbc_tml <- get_timelines("@BBCNews", n = 100)
+bbc_tml <- get_timeline("@BBCNews", n = 100)
 ```
 
-The issue appears to be that the default Twitter API token used by `{rtweet}` will not work for this. The solution is to create your own token and specify that in the `token = ...` argument. If you want to use this function, you should instead use its app authentication mechanism. To use twitter from R, you’ll need to learn a little more about what’s going on behind the scenes. The first important concept to grasp is that every request to the Twitter API has to go through an “app”. Normally, someone else has created the app for you, but now that you’re using twitter programmatically, you need to create your own app. (It’s still called an app even though you’ll be using it through an R package).
+The issue appears to be that the default Twitter API token used by `{rtweet}` will not work for this. The solution is to create your own token and specify that in the `token = ...` argument. If you want to use this function, you should instead use Twitter's app authentication mechanism. 
 
-#### Creating a Twitter app
+#### **Creating a Twitter app**
 
-It's helpful to learn a little more about what's going on behind the scenes. The first thing to know is that every request to the Twitter API has to go through an "app". Normally, someone else has created the app for you, but now that you're using twitter programmatically, you need to create your own app. (It's still called an app even though you'll be using it through an R package).
+It's helpful to learn a little more about what's going on behind the scenes. The first thing to know is that every request to the Twitter API has to go through an "app". Normally, someone else has created the app for you (it's still called an app even though you'll be using it through an R package).
 
-To create a Twitter app, you need to first apply for a free developer account by following the instructions at [**https://developer.twitter.com**](https://developer.twitter.com). Once you have been approved (which may take some time), go to the [**developer portal**](https://developer.twitter.com/en/portal/projects-and-apps) and click the "Create App" button at the bottom of the page. You'll need to give a name your app (the name is unimportant for our purposes), but needs to be unique across all twitter apps.
+To create a Twitter app, you need to first apply for a free developer account by following the instructions at [**https://developer.twitter.com**](https://developer.twitter.com). Once you have been approved (which may take some time), go to the [**developer portal**](https://developer.twitter.com/en/portal/projects-and-apps) and click the "Create App" button at the bottom of the page. You'll need to give a name for your app (the name is unimportant for our purposes), but it needs to be unique across all twitter apps.
 
 After you've named your app, you'll see a screen that gives you some important information. These are your API key, your API secret key, and Bearer token:
 
@@ -347,11 +347,11 @@ After you've named your app, you'll see a screen that gives you some important i
 
 You'll only see this once, so you need to record it in a secure location. For now you can copy these to a text file. Don't worry though---if you don't record these or lose them, you can always regenerate them.
 
-Once you've done this, click the "App settings" button, and go to the "Keys and tokens tab". Now as well as the API key and secret you recorded earlier, you'll also need to generate a “Access token and secret” which you can get by clicking the “Generate” button on the next to "Access Token and Secret":
+Once you've done this, click the "App settings" button, and go to the "Keys and tokens tab". Now as well as the API key and secret you recorded earlier, you'll also need to generate an "Access token and secret" which you can get by clicking the "Generate" button on the next to "Access Token and Secret":
 
 ![Twitter Access keys and tokens](`r here("figures", "twitter_app_access.png")`)
 
-Again, record these somewhere secure. What I like to do is create list in R with these values, and save that to my project directory. This way I can easy load it when I start a new session.
+Again, record these somewhere secure. What I like to do is create list in R with these values, and save that to my project directory. This way I can easily load it when I start a new session.
 
 ```{r eval = F}
 # Your values will differ 
@@ -366,7 +366,7 @@ jgtwitterapp_keylist <- list(
 saveRDS(jgtwitterapp_keylist, here("keys", "jgtwitterapp_keys.rds"))
 ```
 
-So when I want to use this with `{rtweet}`, I can just load it and create a token with `create_token`.
+So when I want to use this with `{rtweet}`, I can just load it and create a token with `create_token()`.
 
 ```{r eval=F}
 jgtwitterapp_keylist <- readRDS(here("keys", "jgtwitterapp_keys.rds"))
@@ -400,7 +400,7 @@ We can also try to locate tweets geographically. This is very useful for doing d
 
 > Since Google Maps implemented stricter API requirements, sending requests to Google's API isn't very convenient. To enable basic uses without requiring a Google Maps API key, a number of the major cities throughout the word and the following two larger locations are baked into this function: 'world' and 'usa'. If 'world' is supplied then a bounding box of maximum latitutde/longitude values, i.e., c(-180, -90, 180, 90), and a center point c(0, 0) are returned. If 'usa' is supplied then estimates of the United States' bounding box and mid-point are returned. To specify a city, provide the city name followed by a space and then the US state abbreviation or country name. To see a list of all included cities, enter `rtweet:::citycoords` in the R console to see coordinates data.
 
-We can see some of the cities listed here. (*Note: I've found that for some reason the US cities (e.g. "new york us" or "columbus ohio us") in this list don't seem to be working with `search_tweets`. I'm not sure why this is, and can't find any information online. The UK and other European cities do seem to work though.*)
+We can see some of the cities listed in `rtweet:::citycoords` below (*Note: I've found that for some reason the US cities (e.g. "new york us" or "columbus ohio us") in this list don't seem to be working with `search_tweets`. I'm not sure why this is, and can't find any information online. The UK and other European cities do seem to work though.*)
 
 ```{r}
 rtweet:::citycoords
@@ -412,7 +412,7 @@ So for example, if we wanted to collect tweets from here in Birmingham, we'd use
 lookup_coords("birmingham england")
 ```
 
-And we'll include a `geocode` argument in our search to get only tweets from within these coordinates. Now, there 
+And we'll include a `geocode` argument in our search to get only tweets from within these coordinates. 
 
 ```{r}
 bham_tweets <- search_tweets(
@@ -426,10 +426,10 @@ bham_tweets %>%
   select(screen_name, location, place_name, geo_coords)
 ```
 
-There are several sources of geographic information in our tweets.
+There are several sources of geographic information in our tweets:
 
 - `location`: This is the *user-defined* location for an account's profile. This can really be anything, so you have to be careful. 
-- `place_name` and `place_full_name`: When users decide to assign a location to their Tweet, they are presented with a list of candidate Twitter Places, and these contain the human-readable names of those places.
+- `place_name` and `place_full_name`: When users decide to assign a location to their Tweet, they are presented with a list of candidate Twitter Places, and these contain the human-readable names of those places. Of course, not all users assign a location, so this is not always useful.
 - `geo_coords`, `coord_coords`, `bbox_coords`: These contain the latitude and longitude coordinates of the tweet, if available
 
 
@@ -437,7 +437,7 @@ There are several sources of geographic information in our tweets.
 bham_tweets %>% 
   count(location, sort = T)
 ```
-You can find the latitude and longitude of those tweets that have them.
+You can find the latitude and longitude of those tweets that have them (you may have to go through a few pages...)
 
 ```{r}
 bham_tweets <- lat_lng(bham_tweets)
@@ -467,10 +467,10 @@ Easy! Now we can just zoom in on the Birmingham area and map our tweets.
 bham_tweets_located <- bham_tweets %>% 
   dplyr::filter(!is.na(lat))
 
-# read in a small dataframe of local cities
+# read in a small dataframe of the lat and long for a few local cities
 wm_towns <- read.csv(here("data_raw", "wm_towns.csv"))
 
-uk_map +
+uk_map + # limit the plot to these lat (the ylim) and long (the xlim) values
   coord_sf(xlim = c(-2.4, -1.5), ylim = c(52.1, 52.6), expand = FALSE) +
   geom_text(
     data = wm_towns,
@@ -482,7 +482,7 @@ uk_map +
     color = "red", alpha = .4
   )
 ```
-It's not the best, but there is a lot more you could do if you're keen on using geolocated data.  
+It's not the best, but there is a lot more you could do with maps if you're really keen on using geolocated data.  
 
 There's a lot more you can do with `{rtweet}`, and I encourage you to check out some of the online guides available, e.g. the creator Michael Kearney's help  [**here**](https://cran.r-project.org/web/packages/rtweet/vignettes/intro.html) and [**here**](https://mkearney.github.io/nicar_tworkshop/#41). 
 
@@ -493,9 +493,9 @@ Alternatively, there is the `{twitteR}` package, which offers some of the same f
 
 # Working with general APIs
 
-Not all APIs have convenient packages dedicated to the their use, so it's likely that you may need to interface with an API directly. To do this we'll use the `{httr}` package to work with Web APIs. Again, Web APIs involve two computers: a client and a server. The client submits a Hypertext Transfer Protocol (HTTP) **request** to the server and the server returns a **response** to the client. The response contains status information about the request and may also contain the requested content. The packages we've just seen do all this as well, but it happens behind the scenes. Now we're going to pull the curtain back a bit and see how it works. But this can be complicated, so I'll just cover the very basics here.
+Not all APIs have convenient packages dedicated to their use, so it's likely that you may need to interface with an API directly. To do this we'll use the `{httr}` package to work with Web APIs. Again, Web APIs involve two computers: a client and a server. The client submits a Hypertext Transfer Protocol (HTTP) **request** to the server and the server returns a **response** to the client. The response contains status information about the request and may also contain the requested content. The packages we've just seen do all this as well, but it happens behind the scenes. Now we're going to pull the curtain back a bit and see how it works step-by-step. But this can be complicated, so I'll just cover the very basics here.
 
-I recommend [**Getting started with `httr` vignette**](https://cran.r-project.org/web/packages/httr/vignettes/quickstart.html) for more details. The other library we'll use is `{jsonlite}`, which is 
+I recommend [**Getting started with `httr` vignette**](https://cran.r-project.org/web/packages/httr/vignettes/quickstart.html) for more details. The other library we'll use is `{jsonlite}`, which is used for working with JSON formatted data (more on this below). Most APIs transmit data in JSON, so we'll need to convert it into something more familiar.
 
 ```{r}
 library(httr)
@@ -505,9 +505,9 @@ library(jsonlite)
 
 ## Basic steps
 
-In the simplest case, to make a request all you need is a URL for the API. The example I'll use here is [**https://github.com/beanboi7/yomomma-apiv2**](https://github.com/beanboi7/yomomma-apiv2), which is  free site that stores "yo momma" jokes. I found this among [**this list of free APIs**](https://github.com/public-apis/public-apis). There are many more you can find if you poke around. 
+In the simplest case, to make a request all you need is a URL for the API. The example I'll use here is [**https://github.com/beanboi7/yomomma-apiv2**](https://github.com/beanboi7/yomomma-apiv2), which is  free site that stores "yo momma" jokes. I found this among [**this list of free APIs**](https://github.com/public-apis/public-apis) on GitHub. There are many more you can find if you poke around. 
 
-We send a request with the `GET()` function, along with information. If you go to the website above, it gives information about the **endpoint**, which is the URL we'll use in our request, as well as any query parameters that we can set. Generally, most sites with web APIs will give you some details about how to use them.
+We send a request with the `GET()` function, along with information. If you go to the website above, it gives information about the **endpoint**, which is the URL we'll use in our request, as well as any query parameters that we can set. Generally, most sites with web APIs will give you some details about how to use them, including the endpoint and other search criteria.
 
 So we store our endpoint, and include it in our `GET()` request:
 
@@ -534,7 +534,7 @@ ym_content <- content(ym_request, as = "text", encoding = "UTF-8")
 ym_content
 ```
 
-This isn't in a nice format, and this is because the content is in **JSON**. JSON stands for JavaScript Object Notation. JSON is useful because it is easily readable by a computer, and for this reason, it has become the primary way that data is communicated through APIs. Most APIs will send their responses in JSON format. 
+This isn't in a nice format, and this is because the content is in **JSON**, which stands for JavaScript Object Notation. JSON is useful because it is easily readable by a computer, and for this reason, it has become the primary way that data is communicated through APIs. Most APIs will send their responses in JSON format. 
 
 This is where the `{jsonlite}` package comes in, since it contains useful funcitons for converting JSON code into more familiar data objects in R. 
 
@@ -554,7 +554,7 @@ That's all there is to it! In reality things are not always that simple, and for
 
 You can scrape list of facts about cats here: [**https://alexwohlbruck.github.io/cat-facts/docs/**](https://alexwohlbruck.github.io/cat-facts/docs/)
 
-```{r}
+```{r eval = F}
 cat_path <- "https://cat-fact.herokuapp.com/facts"
 
 cat_facts <- GET(
@@ -565,7 +565,7 @@ http_status(cat_facts)
 ```
 
 
-```{r}
+```{r eval = F}
 cat_df <- content(cat_facts, as = "text", encoding = "UTF-8") %>%
   fromJSON(flatten = TRUE) %>%
   data.frame()
@@ -631,7 +631,7 @@ Again, you'll need to register a developer account ([**https://developer.oxfordd
 ```{r}
 oed_keys <- readRDS(here::here("keys", "oed_keys.rds"))
 
-# note that the path contains the word you are searching for
+# note that the endpoint path contains the word you are searching for here
 word <- "dinosaur"
 ox_path <- paste0("https://od-api.oxforddictionaries.com/api/v2/entries/en-gb/", word)
 
@@ -651,7 +651,7 @@ It works! Now we could create our own wrapper function that gets the request and
 # function for getting entries from the OED API
 get_OED_entry <- function(word, lang = "en-gb"){
   # Load the keys if not already in the workspace
-  if(!"oed_keys" %in% ls()) readRDS(here::here("keys", "oed_keys.rds"))
+  if(!"oed_keys" %in% ls()) oed_keys <- readRDS(here::here("keys", "oed_keys.rds"))
   
   path <- paste(
     "https://od-api.oxforddictionaries.com/api/v2/entries",
@@ -685,7 +685,7 @@ kraken_entry %>%
   glimpse()
 ```
 
-Notice that the object returned by the API is a complex list with multiple embedded lists and dataframes, so you'l have to do some exploration
+Notice that the object returned by the API is a complex list with multiple embedded lists and dataframes, so you'll have to do some exploration.
 
 ```{r}
 kraken_entry$results.lexicalEntries %>% 
@@ -700,7 +700,7 @@ kraken_entry$results.lexicalEntries %>%
   glimpse()
 ```
 
-So the entries are a list with one dataframe as its argument (this is getting ridiculous...). Let's see what that looks like...
+So the entries are a list with one dataframe as its argument (this is getting ridiculous...). Let's see what that looks like.
 
 ```{r}
 kraken_entry$results.lexicalEntries %>% 
@@ -723,6 +723,7 @@ kraken_entry$results.lexicalEntries %>%
   pull(definitions) %>% 
   simplify() # collapse a list to a vector
 ```
+
 So we have a process for getting definitions. We can test it on a form with multiple meanings.
 
 ```{r}
