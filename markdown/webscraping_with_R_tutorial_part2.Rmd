@@ -471,7 +471,7 @@ bham_tweets_located <- bham_tweets %>%
 wm_towns <- read.csv(here("data_raw", "wm_towns.csv"))
 
 uk_map + # limit the plot to these lat (the ylim) and long (the xlim) values
-  coord_sf(xlim = c(-2.4, -1.5), ylim = c(52.1, 52.6), expand = FALSE) +
+  coord_sf(xlim = c(-2.4, -1.5), ylim = c(52.1, 52.6)) +
   geom_text(
     data = wm_towns,
     aes(x = long, y = lat, label = city)
@@ -482,9 +482,9 @@ uk_map + # limit the plot to these lat (the ylim) and long (the xlim) values
     color = "red", alpha = .4
   )
 ```
-It's not the best, but there is a lot more you could do with maps if you're really keen on using geolocated data.  
+It's not the best, but there is plenty of information out there on working with geographical data maps if you're really keen on using geolocated data. Just be warned that it is not necessarily straightforward (I myself am not very familiar with this). 
 
-There's a lot more you can do with `{rtweet}`, and I encourage you to check out some of the online guides available, e.g. the creator Michael Kearney's help  [**here**](https://cran.r-project.org/web/packages/rtweet/vignettes/intro.html) and [**here**](https://mkearney.github.io/nicar_tworkshop/#41). 
+Anyway, there's a lot more you can do with `{rtweet}`, and I encourage you to check out some of the online guides available, e.g. the creator Michael Kearney's help  [**here**](https://cran.r-project.org/web/packages/rtweet/vignettes/intro.html) and [**here**](https://mkearney.github.io/nicar_tworkshop/#41). 
 
 Alternatively, there is the `{twitteR}` package, which offers some of the same functionality as `{rtweet}`. You can find help on how to use `{twitteR}` in [**this vignette**](http://geoffjentry.hexdump.org/twitteR.pdf).
 
